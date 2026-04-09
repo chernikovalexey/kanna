@@ -18,6 +18,7 @@ import {
   isSidebarModifierShortcut,
   shouldShowSidebarNumberJumpHints,
 } from "./sidebarNumberJump"
+import { useSidebarResize } from "./useSidebarResize"
 
 interface KannaSidebarProps {
   data: SidebarData
@@ -70,6 +71,7 @@ function KannaSidebarImpl({
 }: KannaSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { width: sidebarWidth, isResizing, onMouseDown: onResizeMouseDown, onDoubleClick: onResizeDoubleClick } = useSidebarResize()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const initializedCollapsedGroupKeysRef = useRef<Set<string>>(new Set())
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
@@ -322,10 +324,12 @@ function KannaSidebarImpl({
         data-sidebar="open"
         className={cn(
           "fixed inset-0 z-50 bg-background dark:bg-card flex flex-col h-[100dvh] select-none",
-          "md:relative md:inset-auto md:w-[275px] md:mr-0 md:h-[calc(100dvh-16px)] md:my-2 md:ml-2 md:border md:border-border md:rounded-2xl",
+          "md:relative md:inset-auto md:w-[var(--sidebar-w)] md:shrink-0 md:mr-0 md:h-[calc(100dvh-16px)] md:my-2 md:ml-2 md:border md:border-border md:rounded-2xl",
           open ? "flex" : "hidden md:flex",
-          collapsed && "md:hidden"
+          collapsed && "md:hidden",
+          isResizing && "md:transition-none"
         )}
+        style={{ "--sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
       >
         <div className=" pl-3 pr-[7px] h-[64px] max-h-[64px] md:h-[55px] md:max-h-[55px] border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -474,6 +478,13 @@ function KannaSidebarImpl({
             </div>
           </button>
         </div>
+
+        {/* Resize drag edge */}
+        <div
+          onMouseDown={onResizeMouseDown}
+          onDoubleClick={onResizeDoubleClick}
+          className="hidden md:block absolute top-0 bottom-0 -right-[3px] w-[6px] cursor-col-resize z-10"
+        />
       </div>
 
       {open ? <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={onClose} /> : null}
